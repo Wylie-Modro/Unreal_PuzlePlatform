@@ -14,7 +14,14 @@ class UNREAL_PUZLEPLATFORM_API UPuzlePlatformsGameInstance : public UGameInstanc
 {
 	GENERATED_BODY()
 	
+public: 
+	UPuzlePlatformsGameInstance(const FObjectInitializer &ObjectInitializer);
+
+	virtual void Init();
+
+	UFUNCTION(Exec)
+	void Host();
 	
-	
-	
+	UFUNCTION(Exec)
+	void JoinServer(const FString& IPaddr);
 };
