@@ -8,10 +8,10 @@
 #include "UnrealString.h"
 
 #include "MenuSystem/MainMenu.h"
+#include "MenuSystem/GameMenu.h"
 
 UPuzlePlatformsGameInstance::UPuzlePlatformsGameInstance(const FObjectInitializer &ObjectInitializer) 
 {
-	UE_LOG(LogTemp, Warning, TEXT("Constructor called"));
 	ConstructorHelpers::FClassFinder<UUserWidget> HostingMenuBP(TEXT("/Game/MenuSystem/WBP_HostUI"));
 	if (HostingMenuBP.Class)
 	{
@@ -23,6 +23,21 @@ UPuzlePlatformsGameInstance::UPuzlePlatformsGameInstance(const FObjectInitialize
 	{
 		UE_LOG(LogTemp, Error, TEXT("HostingMenuBP is a nullptr"));
 	}
+
+
+
+	ConstructorHelpers::FClassFinder<UUserWidget> GameMenuBP(TEXT("/Game/MenuSystem/WBP_GameUI"));
+	if (GameMenuBP.Class)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Const Found Class: %s"), *GameMenuBP.Class->GetName());
+
+		GameMenuClass = GameMenuBP.Class;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("GameMenuBP is a nullptr"));
+	}
+
 }
 
 void UPuzlePlatformsGameInstance::Init()
@@ -32,9 +47,9 @@ void UPuzlePlatformsGameInstance::Init()
 
 void UPuzlePlatformsGameInstance::Host()
 {
-	if (Menu)
+	if (MainMenuInstance)
 	{
-		Menu->Teardown();
+		MainMenuInstance->Teardown();
 	}
 
 	UEngine* Engine = GetEngine();
@@ -55,11 +70,11 @@ void UPuzlePlatformsGameInstance::Host()
 }
 
 
-void UPuzlePlatformsGameInstance::Join (const FString& IPaddr)
+void UPuzlePlatformsGameInstance::Join(const FString& IPaddr)
 {
-	if (Menu)
+	if (MainMenuInstance)
 	{
-		Menu->Teardown();
+		MainMenuInstance->Teardown();
 	}
 
 	UEngine* Engine = GetEngine();
@@ -80,11 +95,24 @@ void UPuzlePlatformsGameInstance::LoadMainMenu()
 {
 	if (HostingMenuClass)
 	{
-		Menu = CreateWidget<UMainMenu>(this, HostingMenuClass);
-		if (Menu)
+		MainMenuInstance = CreateWidget<UMainMenu>(this, HostingMenuClass);
+		if (MainMenuInstance)
 		{
-			Menu->Setup();
-			Menu->SetMenuInterface(this);
+			MainMenuInstance->Setup();
+			MainMenuInstance->SetMenuInterface(this);
+		}
+	}
+}
+
+void UPuzlePlatformsGameInstance::LoadGameMenu()
+{
+	if (GameMenuClass)
+	{
+		GameMenuInstance = CreateWidget<UGameMenu>(this, GameMenuClass);
+		if (GameMenuInstance)
+		{
+			GameMenuInstance->Setup();
+			//GameMenuInstance->SetMenuInterface(this);
 		}
 	}
 }

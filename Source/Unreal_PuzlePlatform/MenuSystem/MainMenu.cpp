@@ -8,7 +8,6 @@
 
 bool UMainMenu::Initialize()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Initialize called"));
 	bool SuperSuccessful = Super::Initialize();
 
 	if (!SuperSuccessful) { return false; }
@@ -41,8 +40,6 @@ void UMainMenu::HostServer()
 
 void UMainMenu::JoinServer()
 {
-
-
 	if (!ensure(IPAddressField != nullptr)) { return; }
 	const FString& IPAddress = IPAddressField->GetText().ToString();
 
