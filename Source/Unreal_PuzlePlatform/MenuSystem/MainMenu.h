@@ -39,6 +39,9 @@ private:
 		class UButton* CancelButton;
 
 		UPROPERTY(meta = (BindWidget))
+		class UButton* QuitGameButton;
+
+		UPROPERTY(meta = (BindWidget))
 		class UWidgetSwitcher* MenuSwitcher;
 
 		UPROPERTY(meta = (BindWidget))
@@ -63,5 +66,8 @@ private:
 
 		UFUNCTION()
 		void GoBackToMainMenu();
+
+		UFUNCTION()
+		void QuitGame();
 
 };

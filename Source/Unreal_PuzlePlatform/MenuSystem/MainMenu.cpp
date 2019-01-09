@@ -19,6 +19,9 @@ bool UMainMenu::Initialize()
 	if (!ensure(OpenJoinMenuButton != nullptr)) { return false; }
 	OpenJoinMenuButton->OnClicked.AddDynamic(this, &UMainMenu::OpenJoinMenu);
 
+	if (!ensure(QuitGameButton!= nullptr)) { return false; }
+	QuitGameButton->OnClicked.AddDynamic(this, &UMainMenu::QuitGame);
+
 	if (!ensure(CancelButton != nullptr)) { return false; }
 	CancelButton->OnClicked.AddDynamic(this, &UMainMenu::GoBackToMainMenu);
 
@@ -129,24 +132,12 @@ void UMainMenu::Teardown()
 	}
 }
 
-/*
-void UMainMenu::OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld)
+
+void UMainMenu::QuitGame()
 {
-	RemoveFromViewport();
+	APlayerController* PlayerController = GetOwningPlayer();
 
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		APlayerController* PlayerController = World->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			FInputModeGameOnly InputModeData;
-
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->bShowMouseCursor = false;
-
-			Super::OnLevelRemovedFromWorld(InLevel, InWorld);
-		}
-	}
+	if (!ensure(PlayerController != nullptr)) { return; }
+	PlayerController->ConsoleCommand(FString("Quit"));
 }
-*/
+

@@ -6,6 +6,8 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "UnrealString.h"
+#include "OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
 
 #include "MenuSystem/MainMenu.h"
 #include "MenuSystem/GameMenu.h"
@@ -42,9 +44,26 @@ UPuzlePlatformsGameInstance::UPuzlePlatformsGameInstance(const FObjectInitialize
 
 void UPuzlePlatformsGameInstance::Init()
 {
+	IOnlineSubsystem* OSS = IOnlineSubsystem::Get();
+	if (OSS != nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Init Found OSS: %s"), *OSS->GetSubsystemName().ToString());
+		SessionInterface = OSS->GetSessionInterface();
+		if (SessionInterface.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Init Got SessionInterface"));
+			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UPuzlePlatformsGameInstance::OnCreateSessionComplete);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Init NOT Found OSS"));
+	}
 	UE_LOG(LogTemp, Warning, TEXT("Init Found Class: %s"), *HostingMenuClass->GetName());
 }
 
+// Old Host Method without steam and only in local network
+/*
 void UPuzlePlatformsGameInstance::Host()
 {
 	if (MainMenuInstance)
@@ -68,7 +87,55 @@ void UPuzlePlatformsGameInstance::Host()
 		}
 	}
 }
+*/
 
+void UPuzlePlatformsGameInstance::Host()
+{
+		
+	if (SessionInterface.IsValid())
+	{
+		FOnlineSessionSettings SessionSettings;
+		SessionInterface->CreateSession(0, TEXT("My Session Game"), SessionSettings);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("SessionInterface.IsValid() = FALSE"));
+	}
+
+}
+
+void UPuzlePlatformsGameInstance::OnCreateSessionComplete(FName SessionName, bool Success)
+{
+	UE_LOG(LogTemp, Error, TEXT("No bogerts here"));
+
+	if (!Success)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Could Not Create Session"));
+		return;
+	}
+
+	if (MainMenuInstance)
+	{
+		MainMenuInstance->Teardown();
+	}
+	UEngine* Engine = GetEngine();
+	if (!ensure(Engine != nullptr)) { return; }
+	if (Engine)
+	{
+		Engine->AddOnScreenDebugMessage(0, 2, FColor::Cyan, TEXT("Hosting..."));
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			if (!ensure(World != nullptr)) { return; }
+			World->ServerTravel("/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap?listen");
+			UE_LOG(LogTemp, Warning, TEXT("Should be in new map"));
+		} else
+		{
+			UE_LOG(LogTemp, Error, TEXT("World* was a nullptr"));
+		}
+	}
+		UE_LOG(LogTemp, Error, TEXT("Poo Bear"));
+}
 
 void UPuzlePlatformsGameInstance::Join(const FString& IPaddr)
 {

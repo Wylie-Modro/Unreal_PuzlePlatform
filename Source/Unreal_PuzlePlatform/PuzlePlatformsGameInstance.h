@@ -5,7 +5,9 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "MenuSystem/MenuInterface.h"
+#include "OnlineSubsystem.h"
 #include "PuzlePlatformsGameInstance.generated.h"
+
 
 /**
  * 
@@ -32,6 +34,7 @@ public:
 	UFUNCTION(Exec)
 	void Join(const FString& IPaddr) override;
 
+
 private: 
 	TSubclassOf<class UUserWidget> HostingMenuClass;
 
@@ -41,6 +44,8 @@ private:
 
 	class UGameMenu* GameMenuInstance;
 
+	IOnlineSessionPtr SessionInterface;
 
-
+	void OnCreateSessionComplete(FName SessionName, bool Success);
+	
 };
