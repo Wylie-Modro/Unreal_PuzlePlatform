@@ -58,6 +58,9 @@ void UPuzlePlatformsGameInstance::Init()
 			UE_LOG(LogTemp, Warning, TEXT("Init Got SessionInterface"));
 			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UPuzlePlatformsGameInstance::OnCreateSessionComplete);
 			SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UPuzlePlatformsGameInstance::OnDestroySessionComplete);
+			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UPuzlePlatformsGameInstance::OnFindSessionsComplete);
+			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UPuzlePlatformsGameInstance::OnJoinSessionComplete);
+			
 		} 
 		else
 		{
@@ -123,8 +126,6 @@ void UPuzlePlatformsGameInstance::Host()
 
 void UPuzlePlatformsGameInstance::OnCreateSessionComplete(FName SessionName, bool Success)
 {
-	UE_LOG(LogTemp, Error, TEXT("No bogerts here"));
-
 	if (!Success)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Could Not Create Session"));
@@ -153,7 +154,6 @@ void UPuzlePlatformsGameInstance::OnCreateSessionComplete(FName SessionName, boo
 			UE_LOG(LogTemp, Error, TEXT("World* was a nullptr"));
 		}
 	}
-		UE_LOG(LogTemp, Error, TEXT("Poo Bear"));
 }
 
 void UPuzlePlatformsGameInstance::CreateSession()
@@ -162,6 +162,10 @@ void UPuzlePlatformsGameInstance::CreateSession()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Will create session"));
 		FOnlineSessionSettings SessionSettings;
+		SessionSettings.bIsLANMatch = true;
+		SessionSettings.NumPublicConnections = 2;
+		SessionSettings.bShouldAdvertise = true;
+
 		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
 	}
 }
@@ -176,15 +180,51 @@ void UPuzlePlatformsGameInstance::OnDestroySessionComplete(FName SessionName, bo
 	}
 }
 
-
-
-void UPuzlePlatformsGameInstance::Join(const FString& IPaddr)
+void UPuzlePlatformsGameInstance::OnFindSessionsComplete(bool Success)
 {
+	if (Success && SessionSearch.IsValid() && MainMenuInstance != nullptr)
+	{
+
+		TArray<FString> ServerListOfStrings;
+
+		for (const FOnlineSessionSearchResult& SingleSearchResult : SessionSearch->SearchResults)
+		//for (FOnlineSessionSearchResult& SingleSearchResult : SearchSessionsResults)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Found Session with ID: %s"), *SingleSearchResult.GetSessionIdStr());
+			ServerListOfStrings.Add(SingleSearchResult.GetSessionIdStr());
+		}
+		MainMenuInstance->SetServerList(ServerListOfStrings);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("FINISHED Finding Sessions"));
+}
+
+void UPuzlePlatformsGameInstance::RefreshServerList()
+{
+
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+	if (SessionSearch.IsValid())
+	{
+		SessionSearch->bIsLanQuery = true;
+
+		UE_LOG(LogTemp, Warning, TEXT("START Finding Sessions"));
+		SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+	}
+
+}
+
+void UPuzlePlatformsGameInstance::Join(uint32 Index)
+{
+	if (!SessionInterface.IsValid()) { return; }
+	if (!SessionSearch.IsValid()) { return; }
 	if (MainMenuInstance)
 	{
 		MainMenuInstance->Teardown();
 	}
 
+	SessionInterface->JoinSession(0, SESSION_NAME, SessionSearch->SearchResults[Index]);
+
+/*
 	UEngine* Engine = GetEngine();
 	if (Engine)
 	{
@@ -196,8 +236,32 @@ void UPuzlePlatformsGameInstance::Join(const FString& IPaddr)
 			PlayerController->ClientTravel(IPaddr, ETravelType::TRAVEL_Absolute);
 		}
 	}
+*/
 }
 
+void UPuzlePlatformsGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (!SessionInterface.IsValid()) { return;  }
+
+	FString URL;
+	if (!SessionInterface->GetResolvedConnectString(SessionName, URL))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Could not get connect String"));
+		return; 
+	}
+
+	UEngine* Engine = GetEngine();
+	if (Engine)
+	{
+		//Engine->AddOnScreenDebugMessage(0, 2, FColor::Cyan, FString::Printf(TEXT("Joining %s"), *IPaddr));
+
+		APlayerController* PlayerController = GetFirstLocalPlayerController();
+		if (PlayerController)
+		{
+			PlayerController->ClientTravel(URL, ETravelType::TRAVEL_Absolute);
+		}
+	}
+}
 
 void UPuzlePlatformsGameInstance::LoadMainMenu()
 {

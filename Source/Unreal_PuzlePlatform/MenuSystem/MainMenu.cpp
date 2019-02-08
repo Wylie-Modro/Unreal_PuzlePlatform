@@ -5,6 +5,26 @@
 #include "Components/Button.h"
 #include "Components/WidgetSwitcher.h"
 #include "Components/EditableTextBox.h"
+#include "Components/TextBlock.h"
+
+#include "UObject/ConstructorHelpers.h"
+
+#include "ServerRow.h"
+
+UMainMenu::UMainMenu(const FObjectInitializer &ObjectInitializer):Super(ObjectInitializer)
+{
+	ConstructorHelpers::FClassFinder<UUserWidget> ServerRowBP(TEXT("/Game/MenuSystem/WBP_ServerRow"));
+	if (ServerRowBP.Class)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Const Found Class: %s"), *ServerRowBP.Class->GetName());
+
+		ServerRowClass = ServerRowBP.Class;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ServerRowBP is a nullptr"));
+	}
+}
 
 bool UMainMenu::Initialize()
 {
@@ -28,7 +48,8 @@ bool UMainMenu::Initialize()
 	if (!ensure(JoinButton != nullptr)) { return false; }
 	JoinButton->OnClicked.AddDynamic(this, &UMainMenu::JoinServer);
 
-	UE_LOG(LogTemp, Warning, TEXT("All buttons true"));
+	if (!ensure(RefreshButton != nullptr)) { return false; }
+	RefreshButton->OnClicked.AddDynamic(this, &UMainMenu::CallRefresh);
 
 	return true;
 }
@@ -41,14 +62,62 @@ void UMainMenu::HostServer()
 	MenuInterface->Host();
 } 
 
+void UMainMenu::SetServerList(TArray<FString> ServerListNames)
+{
+	if (ServerRowClass)
+	{
+		UWorld* World = this->GetWorld();
+		if (!ensure(World != nullptr)) { return; }
+
+		ServerList->ClearChildren();
+
+		int RowIndex = 0;
+		for (const FString& ServerListName : ServerListNames) {
+
+			UServerRow* Row = CreateWidget<UServerRow>(World, ServerRowClass);
+			if (!ensure(Row != nullptr)) { return; }
+
+			if (!ensure(Row->ServerName != nullptr)) { return; }
+			Row->ServerName->SetText(FText::FromString(ServerListName));
+			Row->Setup(this, RowIndex);
+			++RowIndex;
+
+			ServerList->AddChild(Row);
+		}
+	}
+}
+
+void UMainMenu::CallRefresh()
+{
+	if (!ensure(MenuInterface != nullptr)) { return; }
+	MenuInterface->RefreshServerList();
+}
+
+void UMainMenu::SetSelectedIndex(uint32 Index)
+{
+	SelectedIndex = Index;
+
+	UE_LOG(LogTemp, Warning, TEXT("Selected Index: %d"), Index);
+}
+
 void UMainMenu::JoinServer()
 {
-	if (!ensure(IPAddressField != nullptr)) { return; }
-	const FString& IPAddress = IPAddressField->GetText().ToString();
 
-	if (!ensure(MenuInterface != nullptr)) { return; }
-	UE_LOG(LogTemp, Warning, TEXT("I'm gonna join a server"));
-	MenuInterface->Join(IPAddress);
+//	if (!ensure(IPAddressField != nullptr)) { return; }
+//	const FString& IPAddress = IPAddressField->GetText().ToString();
+
+//	if (!ensure(MenuInterface != nullptr)) { return; }
+//	UE_LOG(LogTemp, Warning, TEXT("I'm gonna join a server"));
+//	MenuInterface->Join(IPAddress);
+
+	if (SelectedIndex.IsSet())
+	{
+		MenuInterface->Join(SelectedIndex.GetValue());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No session selected"));
+	}
 } 
 
 void UMainMenu::OpenJoinMenu()
@@ -58,6 +127,11 @@ void UMainMenu::OpenJoinMenu()
 		if (JoinMenu)
 		{
 			MenuSwitcher->SetActiveWidget(JoinMenu);
+
+			if (MenuInterface)
+			{
+				MenuInterface->RefreshServerList();
+			}
 		}
 		else
 		{

@@ -24,5 +24,7 @@ class UNREAL_PUZLEPLATFORM_API IMenuInterface
 public:
 	virtual void Host() = 0; 
 	
-	virtual void Join(const FString& IPaddr) = 0;
+	virtual void Join(uint32 Index) = 0;
+
+	virtual void RefreshServerList() = 0;
 };
