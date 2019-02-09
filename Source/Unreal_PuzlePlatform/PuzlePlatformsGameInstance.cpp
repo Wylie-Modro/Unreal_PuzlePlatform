@@ -162,9 +162,10 @@ void UPuzlePlatformsGameInstance::CreateSession()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Will create session"));
 		FOnlineSessionSettings SessionSettings;
-		SessionSettings.bIsLANMatch = true;
+		SessionSettings.bIsLANMatch = false;
 		SessionSettings.NumPublicConnections = 2;
 		SessionSettings.bShouldAdvertise = true;
+		SessionSettings.bUsesPresence = true;
 
 		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
 	}
@@ -182,6 +183,7 @@ void UPuzlePlatformsGameInstance::OnDestroySessionComplete(FName SessionName, bo
 
 void UPuzlePlatformsGameInstance::OnFindSessionsComplete(bool Success)
 {
+	MainMenuInstance->SetServerList({ "Test1", "Test2", "Test3" });
 	if (Success && SessionSearch.IsValid() && MainMenuInstance != nullptr)
 	{
 
@@ -193,7 +195,7 @@ void UPuzlePlatformsGameInstance::OnFindSessionsComplete(bool Success)
 			UE_LOG(LogTemp, Warning, TEXT("Found Session with ID: %s"), *SingleSearchResult.GetSessionIdStr());
 			ServerListOfStrings.Add(SingleSearchResult.GetSessionIdStr());
 		}
-		MainMenuInstance->SetServerList(ServerListOfStrings);
+		//MainMenuInstance->SetServerList(ServerListOfStrings);
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("FINISHED Finding Sessions"));
@@ -205,7 +207,9 @@ void UPuzlePlatformsGameInstance::RefreshServerList()
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	if (SessionSearch.IsValid())
 	{
-		SessionSearch->bIsLanQuery = true;
+		//SessionSearch->bIsLanQuery = true;
+		SessionSearch->MaxSearchResults = 100;
+		SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
 		UE_LOG(LogTemp, Warning, TEXT("START Finding Sessions"));
 		SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());

@@ -97,7 +97,30 @@ void UMainMenu::SetSelectedIndex(uint32 Index)
 {
 	SelectedIndex = Index;
 
+	UpdateChildern();
+
 	UE_LOG(LogTemp, Warning, TEXT("Selected Index: %d"), Index);
+}
+
+void UMainMenu::UpdateChildern()
+{
+	for (int i = 0; i < ServerList->GetChildrenCount(); ++i)
+	{
+		auto Row = Cast<UServerRow>(ServerList->GetChildAt(i));
+		if (Row != nullptr)
+		{
+			Row->isSelected = (SelectedIndex.IsSet() && SelectedIndex.GetValue() == i);
+
+			if (Row->isSelected)
+			{
+				Row->ServerRowButton->SetColorAndOpacity(FLinearColor(0, 255, 0, 1.0f));
+			}
+			else
+			{
+				Row->ServerRowButton->SetColorAndOpacity(FLinearColor(255, 255, 255, 1.0f));
+			}
+		}
+	}
 }
 
 void UMainMenu::JoinServer()

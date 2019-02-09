@@ -35,6 +35,8 @@ protected:
 private:
 	TSubclassOf<class UUserWidget> ServerRowClass;
 
+	void UpdateChildern();
+
 	TOptional<uint32> SelectedIndex;
 
 	UPROPERTY(meta = (BindWidget))

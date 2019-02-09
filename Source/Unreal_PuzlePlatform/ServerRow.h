@@ -20,10 +20,13 @@ public:
 
 	void Setup(class UMainMenu* pParent, uint32 pIndex);
 
-private:
+	UPROPERTY(BlueprintReadOnly)
+	bool isSelected = false;
+
 	UPROPERTY(meta = (BindWidget))
 	class UButton* ServerRowButton;
 
+private:
 	UFUNCTION()
 	void OnClickedRow();
 
