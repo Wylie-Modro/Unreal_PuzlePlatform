@@ -23,6 +23,8 @@ public:
 
 	void RefreshServerList() override;
 
+	void StartMySession();
+
 	virtual void Init();
 
 	UFUNCTION(Exec, BlueprintCallable)
@@ -32,11 +34,12 @@ public:
 	void LoadGameMenu();
 
 	UFUNCTION(Exec)
-	void Host() override;
+	void Host(const FString& HostName) override;
 	
 	UFUNCTION(Exec)
 	void Join(uint32 Index) override;
 
+	FString DesiredHostName = "Apple Bunnies";
 
 private: 
 	TSubclassOf<class UUserWidget> HostingMenuClass;

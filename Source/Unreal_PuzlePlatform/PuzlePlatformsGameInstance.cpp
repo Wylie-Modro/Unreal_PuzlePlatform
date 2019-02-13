@@ -13,8 +13,9 @@
 #include "MenuSystem/GameMenu.h"
 
 
-const FName SESSION_NAME = TEXT("My Session Game");
-
+const FName SESSION_NAME = NAME_GameSession;
+//const FName SESSION_NAME = TEXT("My Session Game");
+const FName SESSION_KEY = TEXT("Host");
 
 UPuzlePlatformsGameInstance::UPuzlePlatformsGameInstance(const FObjectInitializer &ObjectInitializer) 
 {
@@ -101,9 +102,9 @@ void UPuzlePlatformsGameInstance::Host()
 }
 */
 
-void UPuzlePlatformsGameInstance::Host()
+void UPuzlePlatformsGameInstance::Host(const FString& HostName)
 {
-		
+	DesiredHostName = HostName;
 	if (SessionInterface.IsValid())
 	{
 		auto ExistingSession = SessionInterface->GetNamedSession(SESSION_NAME);
@@ -147,7 +148,7 @@ void UPuzlePlatformsGameInstance::OnCreateSessionComplete(FName SessionName, boo
 			if (!ensure(World != nullptr)) { return; }
 			
 			UE_LOG(LogTemp, Warning, TEXT("Actor count: %d"), World->GetActorCount());
-			World->ServerTravel("/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap?listen");
+			World->ServerTravel("/Game/ThirdPersonCPP/Maps/Lobby?listen");
 			UE_LOG(LogTemp, Warning, TEXT("Should be in new map"));
 		} else
 		{
@@ -162,10 +163,21 @@ void UPuzlePlatformsGameInstance::CreateSession()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Will create session"));
 		FOnlineSessionSettings SessionSettings;
-		SessionSettings.bIsLANMatch = false;
-		SessionSettings.NumPublicConnections = 2;
+
+		if (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL")
+		{
+			SessionSettings.bIsLANMatch = true;
+		}
+		else
+		{
+			SessionSettings.bIsLANMatch = false;
+		}
+
+
+		SessionSettings.NumPublicConnections = 5;
 		SessionSettings.bShouldAdvertise = true;
 		SessionSettings.bUsesPresence = true;
+		SessionSettings.Set(SESSION_KEY, DesiredHostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
 	}
@@ -177,25 +189,32 @@ void UPuzlePlatformsGameInstance::OnDestroySessionComplete(FName SessionName, bo
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Session was destroyed, now creating new session"));
 		// because we did want to actually create the session
-		CreateSession();
+		//CreateSession();
 	}
 }
 
 void UPuzlePlatformsGameInstance::OnFindSessionsComplete(bool Success)
 {
-	MainMenuInstance->SetServerList({ "Test1", "Test2", "Test3" });
 	if (Success && SessionSearch.IsValid() && MainMenuInstance != nullptr)
 	{
 
-		TArray<FString> ServerListOfStrings;
+		TArray<FServerData> ServerListOfServerData;
 
 		for (const FOnlineSessionSearchResult& SingleSearchResult : SessionSearch->SearchResults)
-		//for (FOnlineSessionSearchResult& SingleSearchResult : SearchSessionsResults)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Found Session with ID: %s"), *SingleSearchResult.GetSessionIdStr());
-			ServerListOfStrings.Add(SingleSearchResult.GetSessionIdStr());
+			//UE_LOG(LogTemp, Warning, TEXT("Found Session with ID: %s"), *SingleSearchResult.GetSessionIdStr());
+			FServerData SingleServerData;
+			FString RecievedSessionName;
+			SingleSearchResult.Session.SessionSettings.Get(SESSION_KEY, RecievedSessionName);
+
+			SingleServerData.SessionName = RecievedSessionName;
+			SingleServerData.HostUsername = SingleSearchResult.Session.OwningUserName;
+			SingleServerData.MaxPlayers = SingleSearchResult.Session.SessionSettings.NumPublicConnections;
+			SingleServerData.CurrentPlayers = SingleServerData.MaxPlayers - SingleSearchResult.Session.NumOpenPublicConnections;
+
+			ServerListOfServerData.Add(SingleServerData);
 		}
-		//MainMenuInstance->SetServerList(ServerListOfStrings);
+		MainMenuInstance->SetServerList(ServerListOfServerData);
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("FINISHED Finding Sessions"));
@@ -279,6 +298,15 @@ void UPuzlePlatformsGameInstance::LoadMainMenu()
 		}
 	}
 }
+
+void UPuzlePlatformsGameInstance::StartMySession()
+{
+	if (SessionInterface.IsValid())
+	{
+		SessionInterface->StartSession(SESSION_NAME);
+	}
+}
+
 
 void UPuzlePlatformsGameInstance::LoadGameMenu()
 {

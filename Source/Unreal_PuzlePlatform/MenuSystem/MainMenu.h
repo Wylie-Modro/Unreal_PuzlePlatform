@@ -8,6 +8,17 @@
 #include "MenuSystem/MenuInterface.h"
 #include "MainMenu.generated.h"
 
+USTRUCT()
+struct FServerData
+{
+	GENERATED_BODY()
+
+	FString SessionName;
+	uint32 CurrentPlayers;
+	uint32 MaxPlayers;
+	FString HostUsername;
+};
+
 /**
  * 
  */
@@ -19,7 +30,7 @@ class UNREAL_PUZLEPLATFORM_API UMainMenu : public UUserWidget
 public:
 	UMainMenu(const FObjectInitializer &ObjectInitializer);
 
-	void SetServerList(TArray<FString> ServerListNames);
+	void SetServerList(TArray<FServerData> ServerListOfData);
 
 	void SetMenuInterface(IMenuInterface* MenuInterface);
 
@@ -40,10 +51,13 @@ private:
 	TOptional<uint32> SelectedIndex;
 
 	UPROPERTY(meta = (BindWidget))
-	class UButton* HostButton;
+	class UButton* CreateSessionButton;
 	
 	UPROPERTY(meta = (BindWidget))
 	class UButton* OpenJoinMenuButton;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* HostButton;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* JoinButton;
@@ -52,7 +66,10 @@ private:
 	class UButton* RefreshButton;
 
 	UPROPERTY(meta = (BindWidget))
-	class UButton* CancelButton;
+	class UButton* CancelHostButton;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* CancelJoinButton;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* QuitGameButton;
@@ -67,7 +84,13 @@ private:
 	class UWidget* JoinMenu;
 
 	UPROPERTY(meta = (BindWidget))
-	class UEditableTextBox* IPAddressField;
+	class UWidget* HostMenu;
+
+	//UPROPERTY(meta = (BindWidget))
+	//class UEditableTextBox* IPAddressField;
+
+	UPROPERTY(meta = (BindWidget))
+	class UEditableTextBox* HostNameTextBox;
 
 	UPROPERTY(meta = (BindWidget))
 	class UPanelWidget* ServerList;
@@ -82,6 +105,9 @@ private:
 
 	UFUNCTION()
 	void OpenJoinMenu();
+
+	UFUNCTION()
+	void OpenHostMenu();
 
 	UFUNCTION()
 	void GoBackToMainMenu();

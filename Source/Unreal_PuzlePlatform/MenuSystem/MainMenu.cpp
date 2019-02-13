@@ -33,17 +33,23 @@ bool UMainMenu::Initialize()
 	if (!SuperSuccessful) { return false; }
 	UE_LOG(LogTemp, Warning, TEXT("SuperSuccessful true"));
 
-	if (!ensure(HostButton != nullptr)) { return false; }
-	HostButton->OnClicked.AddDynamic(this, &UMainMenu::HostServer);
+	if (!ensure(CreateSessionButton != nullptr)) { return false; }
+	CreateSessionButton->OnClicked.AddDynamic(this, &UMainMenu::HostServer);
 
 	if (!ensure(OpenJoinMenuButton != nullptr)) { return false; }
 	OpenJoinMenuButton->OnClicked.AddDynamic(this, &UMainMenu::OpenJoinMenu);
 
+	if (!ensure(HostButton != nullptr)) { return false; }
+	HostButton->OnClicked.AddDynamic(this, &UMainMenu::OpenHostMenu);
+
 	if (!ensure(QuitGameButton!= nullptr)) { return false; }
 	QuitGameButton->OnClicked.AddDynamic(this, &UMainMenu::QuitGame);
 
-	if (!ensure(CancelButton != nullptr)) { return false; }
-	CancelButton->OnClicked.AddDynamic(this, &UMainMenu::GoBackToMainMenu);
+	if (!ensure(CancelHostButton != nullptr)) { return false; }
+	CancelHostButton->OnClicked.AddDynamic(this, &UMainMenu::GoBackToMainMenu);
+
+	if (!ensure(CancelJoinButton != nullptr)) { return false; }
+	CancelJoinButton->OnClicked.AddDynamic(this, &UMainMenu::GoBackToMainMenu);
 
 	if (!ensure(JoinButton != nullptr)) { return false; }
 	JoinButton->OnClicked.AddDynamic(this, &UMainMenu::JoinServer);
@@ -59,10 +65,13 @@ void UMainMenu::HostServer()
 	if (!ensure(MenuInterface != nullptr)) { return; }
 	UE_LOG(LogTemp, Warning, TEXT("I'm gonna host a server"));
 
-	MenuInterface->Host();
+	if (!ensure(HostNameTextBox!= nullptr)) { return; }
+	FString HostName = HostNameTextBox->GetText().ToString();
+
+	MenuInterface->Host(HostName);
 } 
 
-void UMainMenu::SetServerList(TArray<FString> ServerListNames)
+void UMainMenu::SetServerList(TArray<FServerData> ServerListOfData)
 {
 	if (ServerRowClass)
 	{
@@ -72,13 +81,21 @@ void UMainMenu::SetServerList(TArray<FString> ServerListNames)
 		ServerList->ClearChildren();
 
 		int RowIndex = 0;
-		for (const FString& ServerListName : ServerListNames) {
+		for (const FServerData& SServerData : ServerListOfData) {
 
 			UServerRow* Row = CreateWidget<UServerRow>(World, ServerRowClass);
 			if (!ensure(Row != nullptr)) { return; }
 
 			if (!ensure(Row->ServerName != nullptr)) { return; }
-			Row->ServerName->SetText(FText::FromString(ServerListName));
+			Row->ServerName->SetText(FText::FromString(SServerData.SessionName));
+			if (!ensure(Row->ServerHostUsername!= nullptr)) { return; }
+			Row->ServerHostUsername->SetText(FText::FromString(SServerData.HostUsername));
+			if (!ensure(Row->ServerCurrentPlayers!= nullptr)) { return; }
+			Row->ServerCurrentPlayers->SetText(FText::AsNumber(SServerData.CurrentPlayers));
+			if (!ensure(Row->ServerMaxPlayers!= nullptr)) { return; }
+			Row->ServerMaxPlayers->SetText(FText::AsNumber(SServerData.MaxPlayers));
+
+
 			Row->Setup(this, RowIndex);
 			++RowIndex;
 
@@ -142,6 +159,25 @@ void UMainMenu::JoinServer()
 		UE_LOG(LogTemp, Warning, TEXT("No session selected"));
 	}
 } 
+
+void UMainMenu::OpenHostMenu()
+{
+	if (MenuSwitcher)
+	{
+		if (HostMenu)
+		{
+			MenuSwitcher->SetActiveWidget(HostMenu);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("HostMenu is null"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("MenuSwitcher is null"));
+	}
+}
 
 void UMainMenu::OpenJoinMenu()
 {

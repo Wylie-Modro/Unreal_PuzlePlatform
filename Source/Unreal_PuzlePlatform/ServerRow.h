@@ -18,6 +18,15 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* ServerName;
 
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* ServerHostUsername;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* ServerCurrentPlayers;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* ServerMaxPlayers;
+
 	void Setup(class UMainMenu* pParent, uint32 pIndex);
 
 	UPROPERTY(BlueprintReadOnly)
